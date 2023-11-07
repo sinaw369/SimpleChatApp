@@ -10,7 +10,7 @@ import (
 func main() {
 	s := newServer()
 
-	http.ListenAndServe(":8585", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	err := http.ListenAndServe(":8585", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		conn, _, _, err := ws.UpgradeHTTP(r, w)
 		if err != nil {
@@ -38,4 +38,7 @@ func main() {
 		go s.NewClient(conn).ReadInput()
 
 	}))
+	if err != nil {
+		log.Println("main->server : ", err)
+	}
 }

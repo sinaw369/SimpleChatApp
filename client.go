@@ -21,8 +21,13 @@ func (c *Client) ReadInput() {
 		msg, op, err := wsutil.ReadClientData(c.conn)
 		if err != nil {
 			// handle error
-			c.conn.Close()
-			log.Println("client->readinput :", err)
+			err := c.conn.Close()
+			if err != nil {
+				//log.Println("closeConnection err->readInput :", err)
+				break
+			}
+			//log.Println("client->readinput :", err)
+
 			//panic(err)
 		}
 		stMsg := string(msg)

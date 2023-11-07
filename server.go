@@ -64,7 +64,7 @@ func (s *Server) NewClient(Conn net.Conn) *Client {
 }
 func (s *Server) nickname(c *Client, args []string, op ws.OpCode) {
 	if len(args) < 2 {
-		c.msg(ws.OpText, "nick is required. usage: /nick NAME")
+		c.msg(op, "nick is required. usage: /nick NAME")
 		return
 	}
 	c.nick = args[1]
@@ -116,22 +116,34 @@ func (s *Server) msg(c *Client, args []string, op ws.OpCode) {
 }
 func (s *Server) quit(c *Client, args []string, op ws.OpCode) {
 	log.Printf("client has left the chat: %s", c.conn.RemoteAddr().String())
+	if c.room == nil {
+		s.quotCurrentRoom(c)
 
-	s.quotCurrentRoom(c)
+		c.msg(op, "sad to see you go :(")
 
-	c.msg(op, "sad to see you go :(")
+		err := c.conn.Close()
+		if err != nil {
+			log.Printf("server->quit :%s", err)
+		}
+	} else {
+		s.quotCurrentRoom(c)
+		c.msg(op, fmt.Sprintf("you leave the Room"))
+		c.room = nil
 
-	err := c.conn.Close()
-	if err != nil {
-		log.Printf("server->quit :%s", err)
 	}
+
 }
 func (s *Server) quotCurrentRoom(c *Client) {
 	if c.room != nil {
 		/*delete(c.room.members, c.conn.RemoteAddr())
 		c.room.broadcast(c, fmt.Sprintf("%s has left the room", c.nick))*/
+
 		oldroom := s.rooms[c.room.name]
 		delete(s.rooms[c.room.name].members, c.conn.RemoteAddr())
 		oldroom.broadcast(c, fmt.Sprintf("%s has left the room", c.nick))
+		/*if len(s.rooms[c.room.name].members) == 0 {
+			s.rooms[oldroom.name].members = nil
+			s.rooms[oldroom.name].name = ""
+		}*/
 	}
 }
